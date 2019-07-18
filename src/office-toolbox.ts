@@ -33,7 +33,7 @@ function logRejection(err) {
   util.appInsightsClient.trackException({ exception: error });
 }
 
-function getManifestPath(manifest_path: string, prod?: boolean, sdx?: boolean): string {
+function getManifestPath(manifest_path: string, sdx?: boolean, prod?: boolean): string {
   let manifestPath = manifest_path;
   if (sdx) {
     if (process.env.npm_package_config_manifest_path) {
@@ -50,6 +50,7 @@ async function promptForCommand() {
   const question = {
     name: 'command',
     type: 'list',
+    
     message: 'What do you want to do?',
     choices: ['List registered developer manifests',
       'Sideload a manifest',
