@@ -33,6 +33,18 @@ function logRejection(err) {
   util.appInsightsClient.trackException({ exception: error });
 }
 
+function getManifestPath(manifest_path: string, prod?: boolean, sdx?: boolean): string {
+  let manifestPath = manifest_path;
+  if (sdx) {
+    if (process.env.npm_package_config_manifest_path) {
+      manifestPath = process.env.npm_package_config_manifest_path;
+    } else {
+      manifestPath = `dist\\${prod ? "prod" : "dev"}\\${process.platform}\\manifest.xml`;
+    }
+  }
+  return manifestPath;
+}
+
 // PROMPT FUNCTIONS //
 async function promptForCommand() {
   const question = {
@@ -302,14 +314,7 @@ commander
   .option('--prod', 'Use the production build')
   .action(async (options) => {
     let application = (!options.application ? null : options.application.toLowerCase());
-    let manifestPath = options.manifest_path;
-    if (options.sdx) {
-      if (process.env.npm_package_config_manifest_path) {
-        manifestPath = process.env.npm_package_config_manifest_path;
-      } else {
-        manifestPath = `dist\\${options.prod ? "prod" : "dev"}\\${process.platform}\\manifest.xml`;
-      }
-    }
+    const manifestPath = getManifestPath(options.manifest_path, options.sdx, options.prod);
     sideload(application, manifestPath);
   });
 
@@ -317,9 +322,12 @@ commander
   .command('remove')
   .option('-a, --application <application>', 'The Office application. Word, PowerPoint, and Excel are currently supported. This parameter is ignored on Windows.')
   .option('-m, --manifest_path <manifest_path>', 'The path of the manifest file to remove.')
+  .option('--sdx', 'Sideload for sdx')
+  .option('--prod', 'Use the production build')
   .action(async (options) => {
     let application = (!options.application ? null : options.application.toLowerCase());
-    remove(application, options.manifest_path);
+    const manifestPath = getManifestPath(options.manifest_path, options.sdx, options.prod);
+    remove(application, manifestPath);
   });
 
 commander
