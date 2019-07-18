@@ -17,19 +17,19 @@ function logRejection(err) {
   let error: Error = undefined;
 
   if (err instanceof Array) {
-     if (err.length) {
-         error = (err[0] instanceof Error) ? err[0] : new Error(err[0]);
-  
-         for (const message of err) {
-             console.log(chalk.default.red(message));
-          }
+    if (err.length) {
+      error = (err[0] instanceof Error) ? err[0] : new Error(err[0]);
+
+      for (const message of err) {
+        console.log(chalk.default.red(message));
       }
+    }
   }
   else {
-      error = (err instanceof Error) ? err : new Error(err);
-      console.log(chalk.default.red(err));  
+    error = (err instanceof Error) ? err : new Error(err);
+    console.log(chalk.default.red(err));
   }
-  
+
   util.appInsightsClient.trackException({ exception: error });
 }
 
@@ -40,9 +40,9 @@ async function promptForCommand() {
     type: 'list',
     message: 'What do you want to do?',
     choices: ['List registered developer manifests',
-              'Sideload a manifest',
-              'Remove a manifest',
-              'Validate a manifest']
+      'Sideload a manifest',
+      'Remove a manifest',
+      'Validate a manifest']
   };
   await inquirer.prompt(question).then((answer) => {
     switch (question.choices.indexOf(answer.command)) {
@@ -85,7 +85,7 @@ async function checkAndPromptForPath(application: string, manifestPath: string):
       if (manifestSelectionMethod === 'path') { return promptForManifestPath(); }
       else if (manifestSelectionMethod === 'browse') { return promptForManifestFromCurrentDirectory(); }
       else if (manifestSelectionMethod === 'registered') { return promptForManifestFromListOfRegisteredManifests(application); }
-      else { throw('An invalid method of specifying the manifest was selected.'); }
+      else { throw ('An invalid method of specifying the manifest was selected.'); }
     });
   }
 }
@@ -96,8 +96,8 @@ async function promptForPathOrChoose(): Promise<string> {
     type: 'list',
     message: 'Would you like to specify the path to a developer manifest or choose one that you have already registered?',
     choices: ['Browse for a developer manifest from the current directory',
-              'Specify the path to a developer manifest',
-              'Choose a registered developer manifest']
+      'Specify the path to a developer manifest',
+      'Choose a registered developer manifest']
   };
   return inquirer.prompt(question).then((answer) => {
     switch (question.choices.indexOf(answer.pathorchoose)) {
@@ -118,7 +118,7 @@ async function promptForManifestFromListOfRegisteredManifests(application: strin
 }
 
 function promptForManifestFromCurrentDirectory(): Promise<string> {
-  return new Promise (async (resolve, reject) => {
+  return new Promise(async (resolve, reject) => {
     const cwd = process.cwd();
 
     let manifestPath = cwd;
@@ -242,7 +242,7 @@ async function sideload(application: string, manifestPath: string) {
     else {
       console.log(`Automatic sideloading is not available for this app, please follow the instructions in the following link: ${appProperties.documentationLink}`);
     }
-    
+
   } catch (err) {
     logRejection(err);
   }
@@ -298,9 +298,19 @@ commander
   .command('sideload')
   .option('-a, --application <application>', 'The Office application. Word, Excel, and PowerPoint are currently supported.')
   .option('-m, --manifest_path <manifest_path>', 'The path of the manifest file to sideload and launch.')
+  .option('--sdx', 'Sideload for sdx')
+  .option('--prod', 'Use the production build')
   .action(async (options) => {
     let application = (!options.application ? null : options.application.toLowerCase());
-    sideload(application, options.manifest_path);
+    let manifestPath = options.manifest_path;
+    if (options.sdx) {
+      if (process.env.npm_package_config_manifest_path) {
+        manifestPath = process.env.npm_package_config_manifest_path;
+      } else {
+        manifestPath = `dist\\${options.prod ? "prod" : "dev"}\\${process.platform}\\manifest.xml`;
+      }
+    }
+    sideload(application, manifestPath);
   });
 
 commander
